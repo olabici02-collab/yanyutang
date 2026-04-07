@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>燕语堂 · 珍品燕窝</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --gold: #C9A84C; --gold-light: #E8D5A3; --gold-dark: #8B6914;
+    --cream: #FAF6EE; --ivory: #F5EDD8; --dark: #1A1208;
+    --brown: #4A3520; --text: #2C1F0E; --text-muted: #7A6248;
+    --shadow: 0 8px 40px rgba(26,18,8,0.12); --shadow-lg: 0 20px 60px rgba(26,18,8,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { font-family:'Noto Sans SC',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--ivory); } ::-webkit-scrollbar-thumb { background:var(--gold); border-radius:3px; }
+
+  header { position:fixed; top:0; left:0; right:0; z-index:1000; background:rgba(250,246,238,0.92); backdrop-filter:blur(20px); border-bottom:1px solid rgba(201,168,76,0.2); padding:0 5%; display:flex; align-items:center; justify-content:space-between; height:70px; }
+  .logo { font-family:'Noto Serif SC',serif; font-size:22px; font-weight:600; color:var(--gold-dark); letter-spacing:4px; text-decoration:none; }
+  .logo span { color:var(--gold); }
+  nav { display:flex; gap:36px; }
+  nav a { font-size:13px; letter-spacing:2px; color:var(--text-muted); text-decoration:none; font-weight:500; transition:color 0.3s; cursor:pointer; }
+  nav a:hover { color:var(--gold); }
+  .header-actions { display:flex; align-items:center; gap:20px; }
+  .cart-btn { position:relative; background:none; border:none; cursor:pointer; font-size:22px; color:var(--brown); transition:color 0.3s; }
+  .cart-btn:hover { color:var(--gold); }
+  .cart-badge { position:absolute; top:-6px; right:-8px; background:var(--gold); color:white; width:18px; height:18px; border-radius:50%; font-size:10px; font-weight:700; display:none; align-items:center; justify-content:center; }
+  .ai-btn { background:linear-gradient(135deg,var(--gold-dark),var(--gold)); color:white; border:none; cursor:pointer; padding:8px 18px; border-radius:24px; font-size:12px; letter-spacing:1px; font-family:'Noto Sans SC',sans-serif; font-weight:500; transition:all 0.3s; }
+  .ai-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(139,105,20,0.4); }
+
+  .hero { min-height:100vh; background:linear-gradient(160deg,#1A1208 0%,#2C1F0E 40%,#4A3520 100%); display:flex; align-items:center; position:relative; overflow:hidden; padding:100px 5% 80px; }
+  .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 60% 60% at 70% 50%,rgba(201,168,76,0.08) 0%,transparent 70%); }
+  .hero-pattern { position:absolute; inset:0; opacity:0.04; background-image:repeating-linear-gradient(45deg,var(--gold) 0px,var(--gold) 1px,transparent 1px,transparent 20px),repeating-linear-gradient(-45deg,var(--gold) 0px,var(--gold) 1px,transparent 1px,transparent 20px); }
+  .hero-content { position:relative; z-index:2; max-width:560px; }
+  .hero-eyebrow { font-size:11px; letter-spacing:5px; color:var(--gold); font-weight:500; text-transform:uppercase; margin-bottom:24px; display:flex; align-items:center; gap:12px; }
+  .hero-eyebrow::before { content:''; width:40px; height:1px; background:var(--gold); }
+  .hero h1 { font-family:'Noto Serif SC',serif; font-size:clamp(42px,6vw,72px); line-height:1.2; font-weight:300; color:var(--gold-light); margin-bottom:8px; }
+  .hero h1 em { font-style:normal; color:var(--gold); display:block; font-weight:600; }
+  .hero p { font-size:15px; line-height:1.9; color:rgba(232,213,163,0.7); margin:24px 0 40px; font-weight:300; }
+  .hero-cta { display:flex; gap:16px; flex-wrap:wrap; }
+  .btn-primary { background:linear-gradient(135deg,var(--gold-dark),var(--gold)); color:white; border:none; cursor:pointer; padding:14px 36px; border-radius:2px; font-size:13px; letter-spacing:2px; font-family:'Noto Sans SC',sans-serif; font-weight:500; transition:all 0.3s; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(201,168,76,0.5); }
+  .btn-outline { background:transparent; color:var(--gold-light); cursor:pointer; padding:14px 36px; border-radius:2px; font-size:13px; letter-spacing:2px; font-family:'Noto Sans SC',sans-serif; font-weight:400; transition:all 0.3s; border:1px solid rgba(201,168,76,0.4); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+  .hero-right { position:absolute; right:5%; top:50%; transform:translateY(-50%); width:min(45%,500px); display:flex; justify-content:center; }
+  .hero-image-frame { position:relative; width:380px; height:480px; }
+  .hero-image-frame::before { content:''; position:absolute; inset:-20px; border:1px solid rgba(201,168,76,0.2); border-radius:200px 200px 0 0; animation:pulse-frame 3s ease-in-out infinite; }
+  @keyframes pulse-frame { 0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.6;transform:scale(1.01)} }
+  .hero-banner-img { width:100%; height:100%; border-radius:180px 180px 0 0; object-fit:cover; background:linear-gradient(180deg,#3D2B18,#8B6914 50%,#C9A84C); display:flex; align-items:center; justify-content:center; font-size:120px; }
+  .hero-stats { position:absolute; bottom:-30px; left:50%; transform:translateX(-50%); background:rgba(26,18,8,0.9); border:1px solid rgba(201,168,76,0.3); padding:16px 24px; display:flex; gap:30px; backdrop-filter:blur(10px); border-radius:4px; white-space:nowrap; }
+  .hero-stat { text-align:center; }
+  .hero-stat-num { font-family:'Playfair Display',serif; font-size:22px; color:var(--gold); display:block; }
+  .hero-stat-label { font-size:10px; color:rgba(232,213,163,0.5); letter-spacing:2px; margin-top:2px; }
+
+  .features-bar { background:var(--dark); padding:24px 5%; display:flex; justify-content:center; gap:60px; flex-wrap:wrap; border-bottom:1px solid rgba(201,168,76,0.15); }
+  .feature-item { display:flex; align-items:center; gap:12px; color:rgba(232,213,163,0.6); font-size:12px; letter-spacing:1.5px; }
+  .feature-icon { font-size:18px; color:var(--gold); }
+
+  section { padding:100px 5%; }
+  .section-header { text-align:center; margin-bottom:60px; }
+  .section-eyebrow { font-size:11px; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:16px; display:block; }
+  .section-title { font-family:'Noto Serif SC',serif; font-size:clamp(28px,4vw,44px); color:var(--brown); font-weight:400; line-height:1.4; }
+  .section-divider { width:60px; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:20px auto 0; }
+
+  #products { background:var(--cream); }
+  .products-filter { display:flex; justify-content:center; gap:12px; margin-bottom:48px; flex-wrap:wrap; }
+  .filter-btn { padding:8px 24px; background:none; border:1px solid rgba(74,53,32,0.2); color:var(--text-muted); cursor:pointer; font-size:12px; letter-spacing:2px; font-family:'Noto Sans SC',sans-serif; border-radius:2px; transition:all 0.3s; }
+  .filter-btn.active, .filter-btn:hover { background:var(--gold); border-color:var(--gold); color:white; }
+  .products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:28px; }
+
+  /* Skeleton loader */
+  .skeleton { background:linear-gradient(90deg,#f0e8d8 25%,#faf0dc 50%,#f0e8d8 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:4px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .product-skeleton { background:white; border-radius:4px; overflow:hidden; box-shadow:0 2px 20px rgba(26,18,8,0.06); }
+  .product-skeleton .sk-img { height:240px; }
+  .product-skeleton .sk-body { padding:20px; }
+  .product-skeleton .sk-line { height:14px; border-radius:3px; margin-bottom:10px; }
+
+  .product-card { background:white; border-radius:4px; overflow:hidden; transition:all 0.4s ease; cursor:pointer; position:relative; box-shadow:0 2px 20px rgba(26,18,8,0.06); }
+  .product-card:hover { transform:translateY(-8px); box-shadow:var(--shadow-lg); }
+  .product-badge { position:absolute; top:16px; left:16px; z-index:2; background:var(--gold); color:white; font-size:10px; letter-spacing:2px; padding:4px 10px; border-radius:2px; font-weight:500; }
+  .product-img { height:240px; overflow:hidden; background:linear-gradient(160deg,#FAF0DC,#E8D5A3); display:flex; align-items:center; justify-content:center; position:relative; }
+  .product-img img { width:100%; height:100%; object-fit:cover; transition:transform 0.4s; }
+  .product-card:hover .product-img img { transform:scale(1.06); }
+  .product-img .emoji { font-size:80px; transition:transform 0.4s; }
+  .product-card:hover .product-img .emoji { transform:scale(1.1); }
+  .product-overlay { position:absolute; inset:0; background:rgba(26,18,8,0.6); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s; }
+  .product-card:hover .product-overlay { opacity:1; }
+  .quick-add { background:white; color:var(--brown); border:none; cursor:pointer; padding:12px 28px; font-size:12px; letter-spacing:2px; font-family:'Noto Sans SC',sans-serif; font-weight:500; border-radius:2px; transition:all 0.2s; }
+  .quick-add:hover { background:var(--gold); color:white; }
+  .product-info { padding:20px; }
+  .product-name { font-family:'Noto Serif SC',serif; font-size:16px; color:var(--brown); font-weight:500; margin-bottom:6px; }
+  .product-desc { font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; }
+  .product-footer { display:flex; justify-content:space-between; align-items:center; }
+  .product-price { font-family:'Playfair Display',serif; font-size:22px; color:var(--gold-dark); font-weight:600; }
+  .product-price span { font-size:13px; color:var(--text-muted); font-family:'Noto Sans SC',sans-serif; }
+  .add-cart-btn { width:36px; height:36px; background:var(--gold); border:none; cursor:pointer; border-radius:50%; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.3s; color:white; }
+  .add-cart-btn:hover { background:var(--gold-dark); transform:scale(1.1); }
+
+  .story-section { background:var(--dark); color:var(--gold-light); display:grid; grid-template-columns:1fr 1fr; gap:0; min-height:500px; padding:0; }
+  .story-image { background:linear-gradient(160deg,#2C1F0E,#C9A84C); display:flex; align-items:center; justify-content:center; font-size:120px; min-height:400px; position:relative; overflow:hidden; }
+  .story-image::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(26,18,8,0.5)); }
+  .story-content { padding:80px 60px; display:flex; flex-direction:column; justify-content:center; }
+  .story-content p { font-size:14px; line-height:2; color:rgba(232,213,163,0.65); margin-top:24px; font-weight:300; }
+  .story-points { margin-top:32px; display:flex; flex-direction:column; gap:16px; }
+  .story-point { display:flex; align-items:flex-start; gap:14px; }
+  .story-point-icon { font-size:20px; margin-top:2px; flex-shrink:0; }
+  .story-point-text { font-size:13px; color:rgba(232,213,163,0.6); line-height:1.7; }
+
+  .cart-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+  .cart-overlay.open { opacity:1; pointer-events:all; }
+  .cart-drawer { position:fixed; right:0; top:0; bottom:0; width:min(440px,95vw); background:white; z-index:2001; transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-20px 0 60px rgba(0,0,0,0.2); }
+  .cart-drawer.open { transform:translateX(0); }
+  .cart-header { padding:24px 28px; border-bottom:1px solid rgba(201,168,76,0.2); display:flex; justify-content:space-between; align-items:center; background:var(--ivory); }
+  .cart-title { font-family:'Noto Serif SC',serif; font-size:18px; color:var(--brown); font-weight:500; letter-spacing:2px; }
+  .close-btn { background:none; border:none; cursor:pointer; font-size:22px; color:var(--text-muted); transition:color 0.3s; }
+  .close-btn:hover { color:var(--brown); }
+  .cart-items { flex:1; overflow-y:auto; padding:20px 28px; }
+  .empty-cart { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted); gap:16px; }
+  .cart-item { display:flex; gap:16px; padding:16px 0; border-bottom:1px solid rgba(201,168,76,0.1); align-items:center; }
+  .cart-item-img { width:72px; height:72px; background:linear-gradient(160deg,#FAF0DC,#E8D5A3); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:32px; flex-shrink:0; overflow:hidden; }
+  .cart-item-img img { width:100%; height:100%; object-fit:cover; }
+  .cart-item-name { font-size:14px; color:var(--brown); font-weight:500; margin-bottom:4px; }
+  .cart-item-price { font-size:16px; color:var(--gold-dark); font-weight:600; }
+  .cart-item-controls { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .qty-btn { width:28px; height:28px; background:var(--ivory); border:1px solid rgba(201,168,76,0.3); cursor:pointer; border-radius:50%; font-size:14px; display:flex; align-items:center; justify-content:center; color:var(--brown); transition:all 0.2s; }
+  .qty-btn:hover { background:var(--gold); color:white; border-color:var(--gold); }
+  .qty-num { font-size:14px; min-width:20px; text-align:center; }
+  .remove-item { background:none; border:none; cursor:pointer; color:#ccc; font-size:16px; margin-left:auto; transition:color 0.2s; }
+  .remove-item:hover { color:#e74c3c; }
+  .cart-footer { padding:20px 28px; border-top:1px solid rgba(201,168,76,0.2); background:var(--ivory); }
+  .cart-total { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .cart-total-label { font-size:13px; color:var(--text-muted); letter-spacing:1px; }
+  .cart-total-value { font-family:'Playfair Display',serif; font-size:24px; color:var(--gold-dark); font-weight:600; }
+  .checkout-btn { width:100%; padding:16px; background:linear-gradient(135deg,var(--gold-dark),var(--gold)); color:white; border:none; cursor:pointer; font-size:13px; letter-spacing:3px; font-family:'Noto Sans SC',sans-serif; font-weight:500; border-radius:2px; margin-top:16px; transition:all 0.3s; }
+  .checkout-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(201,168,76,0.5); }
+
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:20px; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:white; width:100%; max-width:600px; max-height:90vh; overflow-y:auto; border-radius:4px; transform:scale(0.95); transition:transform 0.3s; }
+  .modal-overlay.open .modal { transform:scale(1); }
+  .modal-header { padding:28px 32px 20px; border-bottom:1px solid rgba(201,168,76,0.2); display:flex; justify-content:space-between; align-items:center; background:var(--ivory); position:sticky; top:0; z-index:10; }
+  .modal-title { font-family:'Noto Serif SC',serif; font-size:20px; color:var(--brown); letter-spacing:2px; }
+  .modal-body { padding:32px; }
+  .order-summary { background:var(--cream); border-radius:4px; padding:20px; margin-bottom:28px; }
+  .order-summary h4 { font-family:'Noto Serif SC',serif; font-size:14px; color:var(--brown); margin-bottom:14px; letter-spacing:2px; }
+  .order-item { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .order-item-name { font-size:13px; color:var(--text-muted); }
+  .order-item-price { font-size:13px; color:var(--brown); font-weight:500; }
+  .order-total-row { display:flex; justify-content:space-between; border-top:1px solid rgba(201,168,76,0.2); padding-top:12px; margin-top:8px; }
+  .order-total-value { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold-dark); font-weight:600; }
+  .form-section h4 { font-family:'Noto Serif SC',serif; font-size:14px; color:var(--brown); margin-bottom:16px; letter-spacing:2px; }
+  .form-group { margin-bottom:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  label { display:block; font-size:11px; color:var(--text-muted); letter-spacing:1.5px; margin-bottom:6px; text-transform:uppercase; }
+  input, select { width:100%; padding:12px 14px; border:1px solid rgba(74,53,32,0.2); border-radius:2px; font-size:14px; font-family:'Noto Sans SC',sans-serif; color:var(--text); background:white; transition:border-color 0.3s; outline:none; }
+  input:focus, select:focus { border-color:var(--gold); }
+  .card-fields { background:var(--cream); padding:20px; border-radius:4px; margin-top:8px; }
+  .card-icons { display:flex; gap:8px; margin-bottom:16px; }
+  .card-icon { padding:4px 10px; background:white; border:1px solid rgba(74,53,32,0.15); border-radius:3px; font-size:11px; color:var(--text-muted); letter-spacing:1px; }
+  .security-badge { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-muted); margin-top:16px; }
+  .pay-btn { width:100%; padding:18px; background:linear-gradient(135deg,var(--gold-dark),var(--gold)); color:white; border:none; cursor:pointer; font-size:14px; letter-spacing:3px; font-family:'Noto Sans SC',sans-serif; font-weight:500; border-radius:2px; margin-top:24px; transition:all 0.3s; }
+  .pay-btn:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(201,168,76,0.5); }
+  .pay-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+  .success-screen { text-align:center; padding:60px 32px; display:none; }
+  .success-screen.show { display:block; }
+  .success-icon { font-size:72px; margin-bottom:20px; }
+  .success-title { font-family:'Noto Serif SC',serif; font-size:26px; color:var(--brown); margin-bottom:12px; }
+  .success-msg { font-size:14px; color:var(--text-muted); line-height:1.8; }
+  .order-num { background:var(--cream); border:1px dashed rgba(201,168,76,0.4); padding:16px 24px; border-radius:4px; margin:24px auto; max-width:280px; font-family:'Playfair Display',serif; font-size:20px; color:var(--gold-dark); letter-spacing:2px; }
+
+  .ai-panel { position:fixed; bottom:24px; right:24px; z-index:4000; }
+  .ai-toggle { width:56px; height:56px; background:linear-gradient(135deg,var(--gold-dark),var(--gold)); border:none; cursor:pointer; border-radius:50%; font-size:24px; box-shadow:0 6px 24px rgba(139,105,20,0.5); display:flex; align-items:center; justify-content:center; transition:all 0.3s; }
+  .ai-toggle:hover { transform:scale(1.1); }
+  .ai-chat { position:absolute; bottom:70px; right:0; width:340px; background:white; border-radius:12px; box-shadow:var(--shadow-lg); overflow:hidden; transform:scale(0.8) translateY(20px); transform-origin:bottom right; opacity:0; pointer-events:none; transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .ai-chat.open { transform:scale(1) translateY(0); opacity:1; pointer-events:all; }
+  .ai-chat-header { background:linear-gradient(135deg,var(--gold-dark),var(--gold)); padding:16px 20px; color:white; display:flex; justify-content:space-between; align-items:center; }
+  .ai-chat-title { font-size:14px; font-weight:500; letter-spacing:1px; }
+  .ai-chat-subtitle { font-size:11px; opacity:0.8; margin-top:2px; }
+  .ai-chat-close { background:none; border:none; cursor:pointer; color:white; font-size:18px; }
+  .ai-messages { height:280px; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:85%; }
+  .msg-ai { align-self:flex-start; } .msg-user { align-self:flex-end; }
+  .msg-bubble { padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.6; }
+  .msg-ai .msg-bubble { background:var(--cream); color:var(--text); border-bottom-left-radius:4px; }
+  .msg-user .msg-bubble { background:var(--gold); color:white; border-bottom-right-radius:4px; }
+  .typing-indicator { display:flex; gap:4px; padding:10px 14px; background:var(--cream); border-radius:16px; border-bottom-left-radius:4px; width:fit-content; }
+  .dot { width:8px; height:8px; background:var(--gold); border-radius:50%; animation:bounce 1.4s infinite; }
+  .dot:nth-child(2){animation-delay:0.2s} .dot:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+  .ai-input-area { padding:12px 16px; border-top:1px solid rgba(201,168,76,0.15); display:flex; gap:8px; }
+  .ai-input { flex:1; padding:10px 12px; border:1px solid rgba(201,168,76,0.3); border-radius:24px; font-size:13px; outline:none; font-family:'Noto Sans SC',sans-serif; }
+  .ai-input:focus { border-color:var(--gold); }
+  .ai-send { width:36px; height:36px; background:var(--gold); border:none; cursor:pointer; border-radius:50%; font-size:16px; color:white; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .ai-send:hover { background:var(--gold-dark); }
+  .quick-prompts { padding:8px 16px 0; display:flex; gap:6px; flex-wrap:wrap; }
+  .quick-prompt { font-size:11px; padding:4px 10px; background:var(--ivory); border:1px solid rgba(201,168,76,0.3); border-radius:12px; cursor:pointer; color:var(--text-muted); transition:all 0.2s; }
+  .quick-prompt:hover { background:var(--gold-light); color:var(--brown); }
+
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--dark); color:var(--gold-light); padding:14px 28px; border-radius:4px; font-size:13px; letter-spacing:1px; opacity:0; transition:all 0.4s; z-index:9999; border:1px solid rgba(201,168,76,0.3); display:flex; align-items:center; gap:10px; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .processing-overlay { position:fixed; inset:0; background:rgba(26,18,8,0.85); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+  .processing-overlay.show { opacity:1; pointer-events:all; }
+  .spinner { width:48px; height:48px; border:3px solid rgba(201,168,76,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .processing-text { color:var(--gold-light); font-size:14px; letter-spacing:3px; }
+
+  footer { background:var(--dark); padding:60px 5% 30px; color:rgba(232,213,163,0.5); }
+  .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:48px; margin-bottom:48px; }
+  .footer-brand .logo { display:block; margin-bottom:16px; font-size:20px; }
+  .footer-brand p { font-size:12px; line-height:1.9; color:rgba(232,213,163,0.4); max-width:260px; }
+  .footer-col h5 { font-size:11px; letter-spacing:3px; color:var(--gold); margin-bottom:16px; text-transform:uppercase; }
+  .footer-col a { display:block; font-size:12px; color:rgba(232,213,163,0.5); text-decoration:none; margin-bottom:8px; }
+  .footer-bottom { border-top:1px solid rgba(201,168,76,0.1); padding-top:24px; display:flex; justify-content:space-between; font-size:11px; letter-spacing:1px; align-items:center; }
+  .payment-icons { display:flex; gap:8px; }
+  .payment-icon { padding:4px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(201,168,76,0.1); border-radius:3px; font-size:10px; color:rgba(232,213,163,0.4); }
+
+  @media(max-width:900px){.hero-right{display:none}.story-section{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}nav{display:none}.form-row{grid-template-columns:1fr}}
+  @media(max-width:600px){.footer-grid{grid-template-columns:1fr}.features-bar{gap:24px}.ai-chat{width:300px}}
+</style>
+</head>
+<body>
+
+<div class="processing-overlay" id="processingOverlay"><div class="spinner"></div><div class="processing-text" id="processingText">正在处理...</div></div>
+<div class="toast" id="toast"><span>✓</span><span id="toastMsg"></span></div>
+
+<header>
+  <a class="logo" href="#">燕<span>语</span>堂</a>
+  <nav>
+    <a onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">精品系列</a>
+    <a onclick="document.getElementById('story').scrollIntoView({behavior:'smooth'})">品牌故事</a>
+    <a onclick="document.getElementById('footer').scrollIntoView({behavior:'smooth'})">联系我们</a>
+  </nav>
+  <div class="header-actions">
+    <button class="ai-btn" onclick="toggleAI()">✦ AI 顾问</button>
+    <button class="cart-btn" onclick="openCart()">🛒<span class="cart-badge" id="cartBadge">0</span></button>
+  </div>
+</header>
+
+<section class="hero" id="home" style="padding-top:100px">
+  <div class="hero-bg"></div><div class="hero-pattern"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Premium Bird's Nest · 马来西亚原产</div>
+    <h1>天赐珍品<em>纯净燕窝</em></h1>
+    <p>源自马来西亚深山洞穴，每一盏燕窝都经过匠人手工挑拣，<br>富含唾液酸与多种活性蛋白，滋补润燥，养颜抗衰。</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">探索产品系列</button>
+      <button class="btn-outline" onclick="toggleAI()">✦ AI 智能推荐</button>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-image-frame">
+      <div class="hero-banner-img" id="heroBanner">🪺</div>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="hero-stat-num">15+</span><div class="hero-stat-label">年品质保证</div></div>
+        <div class="hero-stat"><span class="hero-stat-num">98%</span><div class="hero-stat-label">客户满意度</div></div>
+        <div class="hero-stat"><span class="hero-stat-num">100%</span><div class="hero-stat-label">天然无添加</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="features-bar">
+  <div class="feature-item"><span class="feature-icon">🌿</span> 天然有机认证</div>
+  <div class="feature-item"><span class="feature-icon">🧪</span> 权威实验室检测</div>
+  <div class="feature-item"><span class="feature-icon">📦</span> 顺丰冷链配送</div>
+  <div class="feature-item"><span class="feature-icon">🔒</span> 安全加密支付</div>
+  <div class="feature-item"><span class="feature-icon">↩️</span> 7天无理由退换</div>
+</div>
+
+<section id="products">
+  <div class="section-header">
+    <span class="section-eyebrow">精品系列 · Premium Collection</span>
+    <h2 class="section-title">甄选珍品燕窝</h2>
+    <div class="section-divider"></div>
+  </div>
+  <div class="products-filter">
+    <button class="filter-btn active" onclick="filterProducts('all',this)">全部系列</button>
+    <button class="filter-btn" onclick="filterProducts('classic',this)">经典系列</button>
+    <button class="filter-btn" onclick="filterProducts('gift',this)">礼盒系列</button>
+    <button class="filter-btn" onclick="filterProducts('instant',this)">即食系列</button>
+  </div>
+  <div class="products-grid" id="productsGrid">
+    <!-- Skeleton loaders -->
+    ${Array(6).fill('<div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>').join('')}
+  </div>
+</section>
+
+<div class="story-section" id="story">
+  <div class="story-image">🪺</div>
+  <div class="story-content">
+    <span class="section-eyebrow" style="text-align:left">Our Story · 品牌故事</span>
+    <h2 class="section-title" style="text-align:left;color:var(--gold-light)">三代匠心<br>守护纯粹</h2>
+    <p>燕语堂创立于2005年，由马来西亚著名燕窝世家第三代传人创办。我们坚持从源头把控品质，每一批燕窝均来自我们自营的雨林燕屋，采用可持续采集方式，保护自然生态。</p>
+    <div class="story-points">
+      <div class="story-point"><div class="story-point-icon">🏔️</div><div class="story-point-text">产地直采，海拔600米以上清洁雨林环境，毛燕纯净无污染</div></div>
+      <div class="story-point"><div class="story-point-icon">👐</div><div class="story-point-text">手工采摘，拒绝机器处理，全程冷链保鲜，营养完整保留</div></div>
+      <div class="story-point"><div class="story-point-icon">🔬</div><div class="story-point-text">每批产品均通过SGS与BV双重国际认证，品质有据可查</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header"><div class="cart-title">购物车</div><button class="close-btn" onclick="closeCart()">✕</button></div>
+  <div class="cart-items" id="cartItems"><div class="empty-cart"><div style="font-size:60px;opacity:0.4">🛒</div><div style="font-size:14px;letter-spacing:1px">购物车还是空的</div></div></div>
+  <div class="cart-footer" id="cartFooter" style="display:none">
+    <div class="cart-total"><span class="cart-total-label">合计</span><span class="cart-total-value" id="cartTotal">¥0</span></div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">含税，运费另计</div>
+    <button class="checkout-btn" onclick="openCheckout()">立即结算 →</button>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">确认订单 · Checkout</div><button class="close-btn" onclick="closeCheckout()">✕</button></div>
+    <div class="modal-body">
+      <div class="order-summary" id="orderSummary"></div>
+      <div id="checkoutForm">
+        <div class="form-section" style="margin-bottom:28px">
+          <h4>收货信息</h4>
+          <div class="form-row">
+            <div class="form-group"><label>姓名</label><input id="fname" placeholder="收货人姓名"></div>
+            <div class="form-group"><label>手机号码</label><input id="fphone" placeholder="手机号码"></div>
+          </div>
+          <div class="form-group"><label>收货地址</label><input id="faddress" placeholder="省市区、街道地址"></div>
+          <div class="form-row">
+            <div class="form-group"><label>城市</label><input id="fcity" placeholder="城市"></div>
+            <div class="form-group"><label>邮政编码</label><input id="fzip" placeholder="邮政编码"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <h4>支付方式</h4>
+          <select id="fpaymethod" style="margin-bottom:16px" onchange="document.getElementById('cardFields').style.display=this.value==='card'?'block':'none'">
+            <option value="card">💳 信用卡 / 借记卡</option>
+            <option value="alipay">🔵 支付宝</option>
+            <option value="wechat">🟢 微信支付</option>
+          </select>
+          <div class="card-fields" id="cardFields">
+            <div class="card-icons"><span class="card-icon">VISA</span><span class="card-icon">MC</span><span class="card-icon">UnionPay</span></div>
+            <div class="form-group"><label>卡号</label><input id="fcardnum" placeholder="1234 5678 9012 3456" maxlength="19" oninput="let v=this.value.replace(/\D/g,'').substring(0,16);this.value=v.replace(/(.{4})/g,'$1 ').trim()"></div>
+            <div class="form-row">
+              <div class="form-group"><label>有效期</label><input id="fcardexp" placeholder="MM / YY" maxlength="7"></div>
+              <div class="form-group"><label>CVV</label><input id="fcardcvv" placeholder="•••" maxlength="3"></div>
+            </div>
+            <div class="form-group"><label>持卡人姓名</label><input id="fcardname" placeholder="持卡人姓名"></div>
+          </div>
+          <div class="security-badge"><span>🔒</span> 所有支付信息均通过256位SSL加密保护</div>
+        </div>
+        <button class="pay-btn" id="payBtn" onclick="processPayment()">确认付款</button>
+      </div>
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✅</div>
+        <h3 class="success-title">订单已成功提交！</h3>
+        <p class="success-msg">感谢您选择燕语堂，我们将在1-2个工作日内为您安排发货。</p>
+        <div class="order-num" id="orderNum">#YYT-000000</div>
+        <button class="btn-primary" style="margin-top:28px;display:inline-block" onclick="closeCheckout();location.reload()">继续购物</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="footer">
+  <div class="footer-grid">
+    <div class="footer-brand"><a class="logo">燕<span>语</span>堂</a><p>我们相信，最好的燕窝来自最好的自然。每一盏燕窝，都承载着对您健康的真诚祝愿。</p></div>
+    <div class="footer-col"><h5>产品系列</h5><a>经典干燕窝</a><a>即食燕窝</a><a>燕窝礼盒</a></div>
+    <div class="footer-col"><h5>客户服务</h5><a>常见问题</a><a>配送说明</a><a>退换货政策</a></div>
+    <div class="footer-col"><h5>关注我们</h5><a>微信公众号</a><a>微博官方</a><a>小红书</a></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 燕语堂 · 马来西亚正品授权</span>
+    <div class="payment-icons"><span class="payment-icon">支付宝</span><span class="payment-icon">微信支付</span><span class="payment-icon">VISA</span><span class="payment-icon">UnionPay</span></div>
+  </div>
+</footer>
+
+<div class="ai-panel">
+  <div class="ai-chat" id="aiChat">
+    <div class="ai-chat-header">
+      <div><div class="ai-chat-title">✦ 燕语堂 AI 顾问</div><div class="ai-chat-subtitle">专业燕窝滋补建议</div></div>
+      <button class="ai-chat-close" onclick="toggleAI()">✕</button>
+    </div>
+    <div class="quick-prompts" id="quickPrompts">
+      <span class="quick-prompt" onclick="sendAI('我是第一次购买，应该选哪款？')">新手推荐</span>
+      <span class="quick-prompt" onclick="sendAI('燕窝有什么功效？')">功效介绍</span>
+      <span class="quick-prompt" onclick="sendAI('怎么挑选好的燕窝？')">选购技巧</span>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-area">
+      <input class="ai-input" id="aiInput" placeholder="请输入您的问题..." onkeydown="if(event.key==='Enter')sendAI()">
+      <button class="ai-send" onclick="sendAI()">➤</button>
+    </div>
+  </div>
+  <button class="ai-toggle" onclick="toggleAI()">✦</button>
+</div>
+
+<script>
+// Init Supabase
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allProducts = [];
+let cart = [];
+let aiOpen = false;
+let aiHistory = [{ role:'assistant', content:'您好！我是燕语堂的AI养生顾问，可以为您提供专业的燕窝选购建议。请问有什么可以帮您？' }];
+
+// ===== PRODUCTS =====
+async function loadProducts() {
+  try {
+    const { data, error } = await supabase.from('products').select('*').eq('status','on').order('id');
+    if (error) throw error;
+    allProducts = data || [];
+    renderProducts(allProducts);
+  } catch(e) {
+    // Fallback to demo data if Supabase not configured
+    allProducts = [
+      { id:1, name:'官燕皇级燕盏', category:'classic', description:'马来西亚天然洞燕，唾液酸含量≥12%', price:1280, original_price:1580, weight:'50g', badge:'热销', images:[], sales:156 },
+      { id:2, name:'清风即食燕窝', category:'instant', description:'鲜炖即食，低糖配方，富含胶原蛋白', price:388, original_price:468, weight:'6瓶装', badge:'爆款', images:[], sales:312 },
+      { id:3, name:'礼装珍品套装', category:'gift', description:'精美礼盒，燕窝100g+精华口服液', price:2580, original_price:3180, weight:'100g+礼盒', badge:'礼品', images:[], sales:88 },
+      { id:4, name:'滋养燕窝精华', category:'classic', description:'燕窝+花旗参+枸杞三重滋补', price:698, original_price:880, weight:'30粒', badge:'新品', images:[], sales:203 },
+      { id:5, name:'产后恢复套餐', category:'gift', description:'适合产后妈妈调理，温和滋补', price:1680, original_price:1980, weight:'30天套餐', badge:'推荐', images:[], sales:134 },
+      { id:6, name:'官燕碎角实惠装', category:'instant', description:'精华碎角，营养等同完整盏', price:480, original_price:620, weight:'100g', badge:'超值', images:[], sales:445 },
+    ];
+    renderProducts(allProducts);
+  }
+}
+
+const EMOJIS = { classic:'🪺', instant:'🍯', gift:'🎁', default:'✨' };
+
+function renderProducts(list) {
+  const grid = document.getElementById('productsGrid');
+  if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa">暂无产品</div>'; return; }
+  grid.innerHTML = list.map(p => {
+    const mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
+    const emoji = EMOJIS[p.category] || EMOJIS.default;
+    return `
+    <div class="product-card">
+      ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
+      <div class="product-img">
+        ${mainImg ? `<img src="${mainImg}" alt="${p.name}">` : `<div class="emoji">${emoji}</div>`}
+        <div class="product-overlay"><button class="quick-add" onclick="addToCart(${p.id},event)">加入购物车</button></div>
+      </div>
+      <div class="product-info">
+        <div style="display:flex;gap:2px;margin-bottom:8px">${'⭐'.repeat(5)}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.description || ''}</div>
+        <div class="product-footer">
+          <div>
+            <div class="product-price">¥${p.price}<span> / ${p.weight || ''}</span></div>
+            ${p.original_price ? `<div style="font-size:11px;color:#ccc;text-decoration:line-through;margin-top:2px">原价 ¥${p.original_price}</div>` : ''}
+          </div>
+          <button class="add-cart-btn" onclick="addToCart(${p.id},event)">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterProducts(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProducts(cat === 'all' ? allProducts : allProducts.filter(p => p.category === cat));
+}
+
+// ===== CART =====
+function addToCart(id, e) {
+  e && e.stopPropagation();
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  const ex = cart.find(x => x.id === id);
+  if (ex) ex.qty++; else cart.push({ ...p, qty:1 });
+  updateCartUI();
+  showToast(`已加入购物车：${p.name}`);
+}
+
+function updateCartUI() {
+  const total = cart.reduce((s,i) => s+i.qty, 0);
+  const badge = document.getElementById('cartBadge');
+  badge.style.display = total > 0 ? 'flex' : 'none';
+  badge.textContent = total;
+  const itemsEl = document.getElementById('cartItems');
+  const footerEl = document.getElementById('cartFooter');
+  if (!cart.length) {
+    itemsEl.innerHTML = '<div class="empty-cart"><div style="font-size:60px;opacity:0.4">🛒</div><div style="font-size:14px;letter-spacing:1px">购物车还是空的</div></div>';
+    footerEl.style.display = 'none'; return;
+  }
+  footerEl.style.display = 'block';
+  itemsEl.innerHTML = cart.map(item => {
+    const mainImg = item.images && item.images.length > 0 ? item.images[0] : null;
+    const emoji = EMOJIS[item.category] || EMOJIS.default;
+    return `<div class="cart-item">
+      <div class="cart-item-img">${mainImg ? `<img src="${mainImg}" alt="">` : emoji}</div>
+      <div style="flex:1">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">¥${(item.price*item.qty).toLocaleString()}</div>
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+          <button class="remove-item" onclick="removeItem(${item.id})">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('cartTotal').textContent = '¥' + cart.reduce((s,i) => s+i.price*i.qty, 0).toLocaleString();
+}
+
+function changeQty(id, d) {
+  const item = cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += d;
+  if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
+  updateCartUI();
+}
+function removeItem(id) { cart = cart.filter(x => x.id !== id); updateCartUI(); }
+function openCart() { document.getElementById('cartOverlay').classList.add('open'); document.getElementById('cartDrawer').classList.add('open'); }
+function closeCart() { document.getElementById('cartOverlay').classList.remove('open'); document.getElementById('cartDrawer').classList.remove('open'); }
+
+// ===== CHECKOUT =====
+function openCheckout() {
+  if (!cart.length) { showToast('购物车是空的'); return; }
+  closeCart();
+  const total = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  document.getElementById('orderSummary').innerHTML = `
+    <h4>订单明细</h4>
+    ${cart.map(i=>`<div class="order-item"><span class="order-item-name">${i.name} × ${i.qty}</span><span class="order-item-price">¥${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
+    <div class="order-total-row"><span style="font-size:14px;font-weight:500;color:var(--brown)">合计</span><span class="order-total-value">¥${total.toLocaleString()}</span></div>`;
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('checkoutForm').style.display = 'block';
+  document.getElementById('checkoutModal').classList.add('open');
+}
+function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
+
+async function processPayment() {
+  const fname = document.getElementById('fname').value.trim();
+  const fphone = document.getElementById('fphone').value.trim();
+  const faddress = document.getElementById('faddress').value.trim();
+  if (!fname || !fphone || !faddress) { showToast('⚠ 请填写完整的收货信息'); return; }
+  document.getElementById('processingText').textContent = '正在提交订单...';
+  document.getElementById('processingOverlay').classList.add('show');
+  const orderId = 'YYT-' + Math.floor(100000 + Math.random()*900000);
+  const orderData = {
+    id: orderId, customer_name: fname, phone: fphone,
+    address: [faddress, document.getElementById('fcity').value, document.getElementById('fzip').value].filter(Boolean).join(' '),
+    items: cart.map(i => ({ id:i.id, name:i.name, qty:i.qty, price:i.price })),
+    total: cart.reduce((s,i) => s+i.price*i.qty, 0),
+    payment: { card:'信用卡', alipay:'支付宝', wechat:'微信支付' }[document.getElementById('fpaymethod').value] || '信用卡',
+    status: 'pending'
+  };
+  try {
+    await supabase.from('orders').insert([orderData]);
+  } catch(e) { /* silently continue if Supabase not set up */ }
+  setTimeout(() => {
+    document.getElementById('processingOverlay').classList.remove('show');
+    document.getElementById('orderNum').textContent = '#' + orderId;
+    document.getElementById('checkoutForm').style.display = 'none';
+    document.getElementById('successScreen').classList.add('show');
+    cart = []; updateCartUI();
+  }, 2000);
+}
+
+// ===== AI =====
+function toggleAI() {
+  aiOpen = !aiOpen;
+  document.getElementById('aiChat').classList.toggle('open', aiOpen);
+  if (aiOpen && !document.getElementById('aiMessages').children.length) renderAIMessages();
+}
+function renderAIMessages() {
+  const el = document.getElementById('aiMessages');
+  el.innerHTML = aiHistory.map(m => `<div class="msg msg-${m.role==='assistant'?'ai':'user'}"><div class="msg-bubble">${m.content}</div></div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+async function sendAI(msg) {
+  const input = document.getElementById('aiInput');
+  const userMsg = msg || input.value.trim();
+  if (!userMsg) return;
+  input.value = '';
+  document.getElementById('quickPrompts').style.display = 'none';
+  aiHistory.push({ role:'user', content:userMsg });
+  renderAIMessages();
+  const el = document.getElementById('aiMessages');
+  const typing = document.createElement('div');
+  typing.className = 'msg msg-ai'; typing.id = 'typing';
+  typing.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  el.appendChild(typing); el.scrollTop = el.scrollHeight;
+  const productList = allProducts.map(p => `${p.name}（¥${p.price}/${p.weight||''}）`).join('、');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000,
+        system:`你是燕语堂高端燕窝品牌的专业AI养生顾问。当前在售产品：${productList}。用中文回答，专业亲切，100-150字以内，适当推荐产品。`,
+        messages: aiHistory.map(m=>({role:m.role,content:m.content}))
+      })
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    const reply = data.content?.[0]?.text || '抱歉，暂时无法回答，请稍后重试。';
+    aiHistory.push({ role:'assistant', content:reply });
+    renderAIMessages();
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    aiHistory.push({ role:'assistant', content:'感谢您的提问！如需详细解答，请拨打客服热线：400-888-8888，或通过微信公众号联系我们。' });
+    renderAIMessages();
+  }
+}
+
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== INIT =====
+loadProducts();
+</script>
+</body>
+</html>
