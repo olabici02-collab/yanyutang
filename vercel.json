@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/yanwo-admin.html"
+    },
+    {
+      "source": "/",
+      "destination": "/yanwo-shop.html"
+    }
+  ]
+}
