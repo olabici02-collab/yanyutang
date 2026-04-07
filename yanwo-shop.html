@@ -214,7 +214,8 @@
   .footer-brand .logo { display:block; margin-bottom:16px; font-size:20px; }
   .footer-brand p { font-size:12px; line-height:1.9; color:rgba(232,213,163,0.4); max-width:260px; }
   .footer-col h5 { font-size:11px; letter-spacing:3px; color:var(--gold); margin-bottom:16px; text-transform:uppercase; }
-  .footer-col a { display:block; font-size:12px; color:rgba(232,213,163,0.5); text-decoration:none; margin-bottom:8px; }
+  .footer-col a { display:block; font-size:12px; color:rgba(232,213,163,0.5); text-decoration:none; margin-bottom:8px; cursor:pointer; transition:color 0.2s; }
+  .footer-col a:hover { color:var(--gold); }
   .footer-bottom { border-top:1px solid rgba(201,168,76,0.1); padding-top:24px; display:flex; justify-content:space-between; font-size:11px; letter-spacing:1px; align-items:center; }
   .payment-icons { display:flex; gap:8px; }
   .payment-icon { padding:4px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(201,168,76,0.1); border-radius:3px; font-size:10px; color:rgba(232,213,163,0.4); }
@@ -285,8 +286,12 @@
     <button class="filter-btn" onclick="filterProducts('instant',this)">即食系列</button>
   </div>
   <div class="products-grid" id="productsGrid">
-    <!-- Skeleton loaders -->
-    ${Array(6).fill('<div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>').join('')}
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
+    <div class="product-skeleton"><div class="skeleton sk-img"></div><div class="sk-body"><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:90%"></div><div class="skeleton sk-line" style="width:40%"></div></div></div>
   </div>
 </section>
 
@@ -369,9 +374,9 @@
 <footer id="footer">
   <div class="footer-grid">
     <div class="footer-brand"><a class="logo">燕<span>语</span>堂</a><p>我们相信，最好的燕窝来自最好的自然。每一盏燕窝，都承载着对您健康的真诚祝愿。</p></div>
-    <div class="footer-col"><h5>产品系列</h5><a>经典干燕窝</a><a>即食燕窝</a><a>燕窝礼盒</a></div>
-    <div class="footer-col"><h5>客户服务</h5><a>常见问题</a><a>配送说明</a><a>退换货政策</a></div>
-    <div class="footer-col"><h5>关注我们</h5><a>微信公众号</a><a>微博官方</a><a>小红书</a></div>
+    <div class="footer-col"><h5>产品系列</h5><a onclick="scrollToProducts('classic')">经典干燕窝</a><a onclick="scrollToProducts('instant')">即食燕窝</a><a onclick="scrollToProducts('gift')">燕窝礼盒</a></div>
+    <div class="footer-col"><h5>客户服务</h5><a onclick="showInfoModal('faq')">常见问题</a><a onclick="showInfoModal('shipping')">配送说明</a><a onclick="showInfoModal('return')">退换货政策</a></div>
+    <div class="footer-col"><h5>关注我们</h5><a onclick="showInfoModal('wechat')">微信公众号</a><a onclick="showInfoModal('weibo')">微博官方</a><a onclick="showInfoModal('xiaohongshu')">小红书</a></div>
   </div>
   <div class="footer-bottom">
     <span>© 2025 燕语堂 · 马来西亚正品授权</span>
@@ -400,123 +405,124 @@
 </div>
 
 <script>
-// Init Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ===== SUPABASE INIT (safe) =====
+var _sb = null;
+(function(){
+  try {
+    if (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL.indexOf('xxxx') === -1 && window.supabase) {
+      _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch(e) { console.warn('Supabase not configured, using demo data'); }
+})();
 
-let allProducts = [];
-let cart = [];
-let aiOpen = false;
-let aiHistory = [{ role:'assistant', content:'您好！我是燕语堂的AI养生顾问，可以为您提供专业的燕窝选购建议。请问有什么可以帮您？' }];
+var allProducts = [];
+var cart = [];
+var aiOpen = false;
+var aiHistory = [{ role:'assistant', content:'您好！我是燕语堂的AI养生顾问，可以为您提供专业的燕窝选购建议。请问有什么可以帮您？' }];
 
 // ===== PRODUCTS =====
 async function loadProducts() {
   try {
-    const { data, error } = await supabase.from('products').select('*').eq('status','on').order('id');
-    if (error) throw error;
-    allProducts = data || [];
+    if (!_sb) throw new Error('no db');
+    var res = await _sb.from('products').select('*').eq('status','on').order('id');
+    if (res.error) throw res.error;
+    allProducts = res.data || [];
     renderProducts(allProducts);
   } catch(e) {
-    // Fallback to demo data if Supabase not configured
     allProducts = [
-      { id:1, name:'官燕皇级燕盏', category:'classic', description:'马来西亚天然洞燕，唾液酸含量≥12%', price:1280, original_price:1580, weight:'50g', badge:'热销', images:[], sales:156 },
-      { id:2, name:'清风即食燕窝', category:'instant', description:'鲜炖即食，低糖配方，富含胶原蛋白', price:388, original_price:468, weight:'6瓶装', badge:'爆款', images:[], sales:312 },
-      { id:3, name:'礼装珍品套装', category:'gift', description:'精美礼盒，燕窝100g+精华口服液', price:2580, original_price:3180, weight:'100g+礼盒', badge:'礼品', images:[], sales:88 },
-      { id:4, name:'滋养燕窝精华', category:'classic', description:'燕窝+花旗参+枸杞三重滋补', price:698, original_price:880, weight:'30粒', badge:'新品', images:[], sales:203 },
-      { id:5, name:'产后恢复套餐', category:'gift', description:'适合产后妈妈调理，温和滋补', price:1680, original_price:1980, weight:'30天套餐', badge:'推荐', images:[], sales:134 },
-      { id:6, name:'官燕碎角实惠装', category:'instant', description:'精华碎角，营养等同完整盏', price:480, original_price:620, weight:'100g', badge:'超值', images:[], sales:445 },
+      { id:1, name:'官燕皇级燕盏', category:'classic', description:'马来西亚天然洞燕，唾液酸含量≥12%，极品滋补佳品', price:1280, original_price:1580, weight:'50g', badge:'热销', images:[], sales:156 },
+      { id:2, name:'清风即食燕窝', category:'instant', description:'鲜炖即食，低糖配方，富含胶原蛋白与唾液酸', price:388, original_price:468, weight:'6瓶装', badge:'爆款', images:[], sales:312 },
+      { id:3, name:'礼装珍品套装', category:'gift', description:'精美礼盒包装，内含精选燕窝100g + 精华口服液', price:2580, original_price:3180, weight:'100g+礼盒', badge:'礼品', images:[], sales:88 },
+      { id:4, name:'滋养燕窝精华', category:'classic', description:'燕窝+花旗参+枸杞三重滋补，低温提炼活性更高', price:698, original_price:880, weight:'30粒', badge:'新品', images:[], sales:203 },
+      { id:5, name:'产后恢复套餐', category:'gift', description:'特别配制，适合产后妈妈调理身体，温和无刺激', price:1680, original_price:1980, weight:'30天套餐', badge:'推荐', images:[], sales:134 },
+      { id:6, name:'官燕碎角实惠装', category:'instant', description:'完整燕盏采摘余下的精华碎角，营养成分等同完整盏', price:480, original_price:620, weight:'100g', badge:'超值', images:[], sales:445 },
     ];
     renderProducts(allProducts);
   }
 }
 
-const EMOJIS = { classic:'🪺', instant:'🍯', gift:'🎁', default:'✨' };
+var EMOJIS = { classic:'🪺', instant:'🍯', gift:'🎁', 'default':'✨' };
 
 function renderProducts(list) {
-  const grid = document.getElementById('productsGrid');
+  var grid = document.getElementById('productsGrid');
   if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa">暂无产品</div>'; return; }
-  grid.innerHTML = list.map(p => {
-    const mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
-    const emoji = EMOJIS[p.category] || EMOJIS.default;
-    return `
-    <div class="product-card">
-      ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
-      <div class="product-img">
-        ${mainImg ? `<img src="${mainImg}" alt="${p.name}">` : `<div class="emoji">${emoji}</div>`}
-        <div class="product-overlay"><button class="quick-add" onclick="addToCart(${p.id},event)">加入购物车</button></div>
-      </div>
-      <div class="product-info">
-        <div style="display:flex;gap:2px;margin-bottom:8px">${'⭐'.repeat(5)}</div>
-        <div class="product-name">${p.name}</div>
-        <div class="product-desc">${p.description || ''}</div>
-        <div class="product-footer">
-          <div>
-            <div class="product-price">¥${p.price}<span> / ${p.weight || ''}</span></div>
-            ${p.original_price ? `<div style="font-size:11px;color:#ccc;text-decoration:line-through;margin-top:2px">原价 ¥${p.original_price}</div>` : ''}
-          </div>
-          <button class="add-cart-btn" onclick="addToCart(${p.id},event)">+</button>
-        </div>
-      </div>
-    </div>`;
+  grid.innerHTML = list.map(function(p) {
+    var mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
+    var emoji = EMOJIS[p.category] || EMOJIS['default'];
+    return '<div class="product-card">'
+      + (p.badge ? '<div class="product-badge">'+p.badge+'</div>' : '')
+      + '<div class="product-img">'
+      + (mainImg ? '<img src="'+mainImg+'" alt="'+p.name+'">' : '<div class="emoji">'+emoji+'</div>')
+      + '<div class="product-overlay"><button class="quick-add" onclick="addToCart('+p.id+',event)">加入购物车</button></div>'
+      + '</div>'
+      + '<div class="product-info">'
+      + '<div style="display:flex;gap:2px;margin-bottom:8px">⭐⭐⭐⭐⭐</div>'
+      + '<div class="product-name">'+p.name+'</div>'
+      + '<div class="product-desc">'+(p.description||'')+'</div>'
+      + '<div class="product-footer">'
+      + '<div><div class="product-price">¥'+p.price+'<span> / '+(p.weight||'')+'</span></div>'
+      + (p.original_price ? '<div style="font-size:11px;color:#ccc;text-decoration:line-through;margin-top:2px">原价 ¥'+p.original_price+'</div>' : '')
+      + '</div>'
+      + '<button class="add-cart-btn" onclick="addToCart('+p.id+',event)">+</button>'
+      + '</div></div></div>';
   }).join('');
 }
 
 function filterProducts(cat, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
-  renderProducts(cat === 'all' ? allProducts : allProducts.filter(p => p.category === cat));
+  renderProducts(cat === 'all' ? allProducts : allProducts.filter(function(p){ return p.category === cat; }));
 }
 
 // ===== CART =====
 function addToCart(id, e) {
-  e && e.stopPropagation();
-  const p = allProducts.find(x => x.id === id);
+  if (e) e.stopPropagation();
+  var p = allProducts.find(function(x){ return x.id === id; });
   if (!p) return;
-  const ex = cart.find(x => x.id === id);
-  if (ex) ex.qty++; else cart.push({ ...p, qty:1 });
+  var ex = cart.find(function(x){ return x.id === id; });
+  if (ex) ex.qty++; else cart.push(Object.assign({}, p, { qty:1 }));
   updateCartUI();
-  showToast(`已加入购物车：${p.name}`);
+  showToast('已加入购物车：' + p.name);
 }
 
 function updateCartUI() {
-  const total = cart.reduce((s,i) => s+i.qty, 0);
-  const badge = document.getElementById('cartBadge');
+  var total = cart.reduce(function(s,i){ return s+i.qty; }, 0);
+  var badge = document.getElementById('cartBadge');
   badge.style.display = total > 0 ? 'flex' : 'none';
   badge.textContent = total;
-  const itemsEl = document.getElementById('cartItems');
-  const footerEl = document.getElementById('cartFooter');
+  var itemsEl = document.getElementById('cartItems');
+  var footerEl = document.getElementById('cartFooter');
   if (!cart.length) {
     itemsEl.innerHTML = '<div class="empty-cart"><div style="font-size:60px;opacity:0.4">🛒</div><div style="font-size:14px;letter-spacing:1px">购物车还是空的</div></div>';
     footerEl.style.display = 'none'; return;
   }
   footerEl.style.display = 'block';
-  itemsEl.innerHTML = cart.map(item => {
-    const mainImg = item.images && item.images.length > 0 ? item.images[0] : null;
-    const emoji = EMOJIS[item.category] || EMOJIS.default;
-    return `<div class="cart-item">
-      <div class="cart-item-img">${mainImg ? `<img src="${mainImg}" alt="">` : emoji}</div>
-      <div style="flex:1">
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-price">¥${(item.price*item.qty).toLocaleString()}</div>
-        <div class="cart-item-controls">
-          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
-          <span class="qty-num">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
-          <button class="remove-item" onclick="removeItem(${item.id})">🗑</button>
-        </div>
-      </div>
-    </div>`;
+  itemsEl.innerHTML = cart.map(function(item){
+    var mainImg = item.images && item.images.length > 0 ? item.images[0] : null;
+    var emoji = EMOJIS[item.category] || EMOJIS['default'];
+    return '<div class="cart-item">'
+      + '<div class="cart-item-img">'+(mainImg ? '<img src="'+mainImg+'" alt="">' : emoji)+'</div>'
+      + '<div style="flex:1">'
+      + '<div class="cart-item-name">'+item.name+'</div>'
+      + '<div class="cart-item-price">¥'+(item.price*item.qty).toLocaleString()+'</div>'
+      + '<div class="cart-item-controls">'
+      + '<button class="qty-btn" onclick="changeQty('+item.id+',-1)">−</button>'
+      + '<span class="qty-num">'+item.qty+'</span>'
+      + '<button class="qty-btn" onclick="changeQty('+item.id+',1)">+</button>'
+      + '<button class="remove-item" onclick="removeItem('+item.id+')">🗑</button>'
+      + '</div></div></div>';
   }).join('');
-  document.getElementById('cartTotal').textContent = '¥' + cart.reduce((s,i) => s+i.price*i.qty, 0).toLocaleString();
+  document.getElementById('cartTotal').textContent = '¥' + cart.reduce(function(s,i){ return s+i.price*i.qty; }, 0).toLocaleString();
 }
 
 function changeQty(id, d) {
-  const item = cart.find(x => x.id === id);
+  var item = cart.find(function(x){ return x.id===id; });
   if (!item) return;
   item.qty += d;
-  if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
+  if (item.qty <= 0) cart = cart.filter(function(x){ return x.id!==id; });
   updateCartUI();
 }
-function removeItem(id) { cart = cart.filter(x => x.id !== id); updateCartUI(); }
+function removeItem(id) { cart = cart.filter(function(x){ return x.id!==id; }); updateCartUI(); }
 function openCart() { document.getElementById('cartOverlay').classList.add('open'); document.getElementById('cartDrawer').classList.add('open'); }
 function closeCart() { document.getElementById('cartOverlay').classList.remove('open'); document.getElementById('cartDrawer').classList.remove('open'); }
 
@@ -524,11 +530,10 @@ function closeCart() { document.getElementById('cartOverlay').classList.remove('
 function openCheckout() {
   if (!cart.length) { showToast('购物车是空的'); return; }
   closeCart();
-  const total = cart.reduce((s,i) => s+i.price*i.qty, 0);
-  document.getElementById('orderSummary').innerHTML = `
-    <h4>订单明细</h4>
-    ${cart.map(i=>`<div class="order-item"><span class="order-item-name">${i.name} × ${i.qty}</span><span class="order-item-price">¥${(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
-    <div class="order-total-row"><span style="font-size:14px;font-weight:500;color:var(--brown)">合计</span><span class="order-total-value">¥${total.toLocaleString()}</span></div>`;
+  var total = cart.reduce(function(s,i){ return s+i.price*i.qty; }, 0);
+  document.getElementById('orderSummary').innerHTML = '<h4>订单明细</h4>'
+    + cart.map(function(i){ return '<div class="order-item"><span class="order-item-name">'+i.name+' × '+i.qty+'</span><span class="order-item-price">¥'+(i.price*i.qty).toLocaleString()+'</span></div>'; }).join('')
+    + '<div class="order-total-row"><span style="font-size:14px;font-weight:500;color:var(--brown)">合计</span><span class="order-total-value">¥'+total.toLocaleString()+'</span></div>';
   document.getElementById('successScreen').classList.remove('show');
   document.getElementById('checkoutForm').style.display = 'block';
   document.getElementById('checkoutModal').classList.add('open');
@@ -536,25 +541,23 @@ function openCheckout() {
 function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
 
 async function processPayment() {
-  const fname = document.getElementById('fname').value.trim();
-  const fphone = document.getElementById('fphone').value.trim();
-  const faddress = document.getElementById('faddress').value.trim();
+  var fname = document.getElementById('fname').value.trim();
+  var fphone = document.getElementById('fphone').value.trim();
+  var faddress = document.getElementById('faddress').value.trim();
   if (!fname || !fphone || !faddress) { showToast('⚠ 请填写完整的收货信息'); return; }
   document.getElementById('processingText').textContent = '正在提交订单...';
   document.getElementById('processingOverlay').classList.add('show');
-  const orderId = 'YYT-' + Math.floor(100000 + Math.random()*900000);
-  const orderData = {
+  var orderId = 'YYT-' + Math.floor(100000 + Math.random()*900000);
+  var orderData = {
     id: orderId, customer_name: fname, phone: fphone,
     address: [faddress, document.getElementById('fcity').value, document.getElementById('fzip').value].filter(Boolean).join(' '),
-    items: cart.map(i => ({ id:i.id, name:i.name, qty:i.qty, price:i.price })),
-    total: cart.reduce((s,i) => s+i.price*i.qty, 0),
+    items: cart.map(function(i){ return { id:i.id, name:i.name, qty:i.qty, price:i.price }; }),
+    total: cart.reduce(function(s,i){ return s+i.price*i.qty; }, 0),
     payment: { card:'信用卡', alipay:'支付宝', wechat:'微信支付' }[document.getElementById('fpaymethod').value] || '信用卡',
     status: 'pending'
   };
-  try {
-    await supabase.from('orders').insert([orderData]);
-  } catch(e) { /* silently continue if Supabase not set up */ }
-  setTimeout(() => {
+  try { if (_sb) await _sb.from('orders').insert([orderData]); } catch(e) {}
+  setTimeout(function(){
     document.getElementById('processingOverlay').classList.remove('show');
     document.getElementById('orderNum').textContent = '#' + orderId;
     document.getElementById('checkoutForm').style.display = 'none';
@@ -570,39 +573,41 @@ function toggleAI() {
   if (aiOpen && !document.getElementById('aiMessages').children.length) renderAIMessages();
 }
 function renderAIMessages() {
-  const el = document.getElementById('aiMessages');
-  el.innerHTML = aiHistory.map(m => `<div class="msg msg-${m.role==='assistant'?'ai':'user'}"><div class="msg-bubble">${m.content}</div></div>`).join('');
+  var el = document.getElementById('aiMessages');
+  el.innerHTML = aiHistory.map(function(m){
+    return '<div class="msg msg-'+(m.role==='assistant'?'ai':'user')+'"><div class="msg-bubble">'+m.content+'</div></div>';
+  }).join('');
   el.scrollTop = el.scrollHeight;
 }
 async function sendAI(msg) {
-  const input = document.getElementById('aiInput');
-  const userMsg = msg || input.value.trim();
+  var input = document.getElementById('aiInput');
+  var userMsg = msg || input.value.trim();
   if (!userMsg) return;
   input.value = '';
   document.getElementById('quickPrompts').style.display = 'none';
   aiHistory.push({ role:'user', content:userMsg });
   renderAIMessages();
-  const el = document.getElementById('aiMessages');
-  const typing = document.createElement('div');
+  var el = document.getElementById('aiMessages');
+  var typing = document.createElement('div');
   typing.className = 'msg msg-ai'; typing.id = 'typing';
   typing.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
   el.appendChild(typing); el.scrollTop = el.scrollHeight;
-  const productList = allProducts.map(p => `${p.name}（¥${p.price}/${p.weight||''}）`).join('、');
+  var productList = allProducts.map(function(p){ return p.name+'（¥'+p.price+'/'+(p.weight||'')+'）'; }).join('、');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000,
-        system:`你是燕语堂高端燕窝品牌的专业AI养生顾问。当前在售产品：${productList}。用中文回答，专业亲切，100-150字以内，适当推荐产品。`,
-        messages: aiHistory.map(m=>({role:m.role,content:m.content}))
+        system:'你是燕语堂高端燕窝品牌的专业AI养生顾问。当前在售产品：'+productList+'。用中文回答，专业亲切，100-150字以内，适当推荐产品。',
+        messages: aiHistory.map(function(m){ return {role:m.role,content:m.content}; })
       })
     });
-    const data = await res.json();
-    document.getElementById('typing')?.remove();
-    const reply = data.content?.[0]?.text || '抱歉，暂时无法回答，请稍后重试。';
+    var data = await res.json();
+    var t = document.getElementById('typing'); if(t) t.remove();
+    var reply = (data.content && data.content[0] && data.content[0].text) || '抱歉，暂时无法回答，请稍后重试。';
     aiHistory.push({ role:'assistant', content:reply });
     renderAIMessages();
   } catch(e) {
-    document.getElementById('typing')?.remove();
+    var t = document.getElementById('typing'); if(t) t.remove();
     aiHistory.push({ role:'assistant', content:'感谢您的提问！如需详细解答，请拨打客服热线：400-888-8888，或通过微信公众号联系我们。' });
     renderAIMessages();
   }
@@ -610,12 +615,73 @@ async function sendAI(msg) {
 
 function showToast(msg) {
   document.getElementById('toastMsg').textContent = msg;
-  const t = document.getElementById('toast');
-  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+  var t = document.getElementById('toast');
+  t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 3000);
 }
 
 // ===== INIT =====
 loadProducts();
+</script>
+
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeInfoModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="infoModalTitle">常见问题</div>
+      <button class="close-btn" onclick="closeInfoModal()">✕</button>
+    </div>
+    <div class="modal-body" id="infoModalBody" style="line-height:2;font-size:13px;color:#555"></div>
+  </div>
+</div>
+
+<script>
+var INFO_CONTENT = {
+  faq: {
+    title: '常见问题',
+    body: '<b>Q：燕窝怎么保存？</b><br>干燕窝放阴凉干燥处，避免潮湿，可保存1-2年。即食燕窝需冷藏，开封后3天内食用。<br><br><b>Q：什么人适合吃燕窝？</b><br>老人、孕妇、产后妈妈、免疫力低下人群及亚健康人士均适合食用。<br><br><b>Q：燕窝怎么辨别真假？</b><br>正品燕窝泡发后呈半透明状，无明显异味，拉丝有弹性。我们所有产品均附有SGS检测证书。<br><br><b>Q：多久可以收到货？</b><br>下单后1-2个工作日发货，顺丰速运3-5天到达。'
+  },
+  shipping: {
+    title: '配送说明',
+    body: '📦 <b>配送方式</b>：顺丰速运全程冷链<br><br>🕐 <b>发货时间</b>：工作日下单，1-2天内发出<br><br>🚚 <b>到货时间</b>：一般3-5个工作日<br><br>💰 <b>运费政策</b>：满500元包邮，不足500元收取18元运费<br><br>📍 <b>配送范围</b>：中国大陆全境（偏远地区可能需要额外费用）<br><br>📞 <b>物流查询</b>：下单后短信通知快递单号，可在顺丰官网查询'
+  },
+  return: {
+    title: '退换货政策',
+    body: '✅ <b>7天无理由退换</b><br>收到货后7天内，商品未开封可申请无理由退换货。<br><br>🔄 <b>退换货条件</b><br>• 商品未开封、未使用<br>• 保留原包装及发票<br>• 非人为损坏<br><br>⚠️ <b>以下情况不支持退换</b><br>• 即食燕窝已开封<br>• 因保存不当导致变质<br><br>📞 <b>申请方式</b><br>联系客服：400-888-8888<br>工作时间：周一至周六 9:00-18:00'
+  },
+  wechat: {
+    title: '微信公众号',
+    body: '<div style="text-align:center;padding:20px 0"><div style="font-size:60px;margin-bottom:16px">📱</div><div style="font-size:15px;font-weight:500;color:#333;margin-bottom:8px">搜索公众号</div><div style="font-size:22px;color:#C9A84C;font-weight:600;letter-spacing:2px;margin-bottom:16px">燕语堂官方</div><div style="font-size:12px;color:#aaa">关注我们获取最新产品资讯、养生知识及专属优惠</div></div>'
+  },
+  weibo: {
+    title: '微博官方',
+    body: '<div style="text-align:center;padding:20px 0"><div style="font-size:60px;margin-bottom:16px">🌐</div><div style="font-size:15px;font-weight:500;color:#333;margin-bottom:8px">微博搜索</div><div style="font-size:22px;color:#C9A84C;font-weight:600;letter-spacing:2px;margin-bottom:16px">@燕语堂珍品燕窝</div><div style="font-size:12px;color:#aaa">关注获取最新动态与优惠活动</div></div>'
+  },
+  xiaohongshu: {
+    title: '小红书',
+    body: '<div style="text-align:center;padding:20px 0"><div style="font-size:60px;margin-bottom:16px">📖</div><div style="font-size:15px;font-weight:500;color:#333;margin-bottom:8px">小红书搜索</div><div style="font-size:22px;color:#C9A84C;font-weight:600;letter-spacing:2px;margin-bottom:16px">燕语堂</div><div style="font-size:12px;color:#aaa">查看真实用户分享与食用心得</div></div>'
+  }
+};
+
+function showInfoModal(type) {
+  var content = INFO_CONTENT[type];
+  if (!content) return;
+  document.getElementById('infoModalTitle').textContent = content.title;
+  document.getElementById('infoModalBody').innerHTML = content.body;
+  document.getElementById('infoModal').classList.add('open');
+}
+function closeInfoModal() {
+  document.getElementById('infoModal').classList.remove('open');
+}
+
+function scrollToProducts(cat) {
+  document.getElementById('products').scrollIntoView({ behavior:'smooth' });
+  setTimeout(function(){
+    var btns = document.querySelectorAll('.filter-btn');
+    var catMap = { classic:1, instant:3, gift:2 };
+    var idx = catMap[cat] || 0;
+    if (btns[idx]) filterProducts(cat, btns[idx]);
+  }, 600);
+}
 </script>
 </body>
 </html>
